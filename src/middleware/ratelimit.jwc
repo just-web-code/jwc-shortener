@@ -1,0 +1,23 @@
+namespace middleware.ratelimit;
+
+import redis;
+
+--- 60 requests per rolling 60s window, keyed on the client address.
+---
+--- `redis.rate_limit` is INCR + EXPIRE in one Lua script. The hand-rolled
+--- read-modify-write this replaced got two things wrong: concurrent
+--- requests could both read the same count and both write count+1, and the
+--- window was per-process, so N replicas meant an effective limit of 60xN.
+---
+--- `request.client_ip()` reads `X-Forwarded-For` only through the
+--- `trusted_proxies` list in `app.jwc`; with none configured it is the
+--- socket peer. That is the whole rule (config.md §3.3) and it is why this
+--- no longer hand-reads `cf-connecting-ip`.
+middleware RateLimit {
+    let ip = request.client_ip();
+    let allowed = redis.rate_limit("rl:" + string.of($ip), 60, 60);
+
+    if (!$allowed) {
+        throw TooManyRequests("juda ko'p so'rov");
+    }
+}

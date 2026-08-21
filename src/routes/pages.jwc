@@ -1,0 +1,37 @@
+namespace routes.pages;
+
+import middleware.metrics;
+import views.pages;
+
+--- Everything a browser or a crawler reads directly.
+---
+--- All six answer a media type that is not JSON, which `content(mime, body)`
+--- is for (routing.md §6.5). Returning a bare string instead would send the
+--- page as a quoted JSON string under `application/json`: a crawler reading
+--- `sitemap.xml` that way skips it, and a social card served as JSON does
+--- not render.
+routes "/" use MetricsTracker {
+    route GET "" {
+        return content("text/html", landing_html());
+    }
+
+    route GET "docs" {
+        return content("text/html", landing_docs());
+    }
+
+    route GET "openapi.json" {
+        return content("application/json", openapi_spec());
+    }
+
+    route GET "robots.txt" {
+        return content("text/plain", robots_txt());
+    }
+
+    route GET "sitemap.xml" {
+        return content("application/xml", sitemap_xml());
+    }
+
+    route GET "og.svg" {
+        return content("image/svg+xml", og_svg());
+    }
+}

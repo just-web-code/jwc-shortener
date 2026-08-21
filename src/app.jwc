@@ -1,0 +1,35 @@
+namespace app;
+
+--- jwc-shortener — the URL shortener behind https://1kb.uz.
+---
+--- One JWC program serves three things:
+---   1. the landing page at `/`        — `views.pages`
+---   2. the shortener API + redirects  — `routes.links`
+---   3. traffic stats + Swagger UI     — `routes.ops`, `routes.pages`
+
+database App : Postgres {
+    init() {
+        pool_size         = int(env("DB_POOL") ?? "20");
+        statement_timeout = "10s";
+        connect_timeout   = "5s";
+    }
+}
+
+--- `public`, so the tables keep the physical names the 0.9.x deployment
+--- created (`link`, `api_call`). A schema rename would orphan every row
+--- behind a service that has been answering since long before this port.
+schema public of App;
+
+server {
+    max_body_bytes  = 16384;
+    request_timeout = "15s";
+    trusted_proxies = ["10.0.0.0/8", "172.16.0.0/12"];
+}
+
+--- Five fresh 7-hex codes colliding back to back is not bad luck: it is a
+--- broken CSPRNG or an exhausted slug space, and it should be loud.
+error CodeExhausted(message: text) = 500 : "qisqa kod ajratib bo'lmadi";
+
+function main() {
+    serve(int(env("PORT") ?? "8080"));
+}

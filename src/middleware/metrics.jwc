@@ -1,0 +1,26 @@
+namespace middleware.metrics;
+
+import app;
+import db.links;
+
+--- Traffic telemetry, written from `after` so the row carries what the
+--- client actually saw.
+---
+--- A request-phase middleware cannot see the response, which is why the
+--- 0.9.x version hardcoded `status` to 200 — even for 404s and 500s — and
+--- `latency_ms` to 0, making every percentile in `/api/v1/stats` a zero.
+--- `response.status()` is only meaningful here (middleware.md §5).
+middleware MetricsTracker {
+    after {
+        -- `after` may not raise (E0811): the response has already been
+        -- decided and there is no handler left to catch anything. A
+        -- telemetry row is not worth a 500 the client would never see.
+        insert into App.public.ApiCalls {
+            path       = request.route(),
+            method     = request.method(),
+            status     = response.status(),
+            latency_ms = int(response.duration_ms()),
+            latency_us = int(response.duration_us())
+        };
+    }
+}

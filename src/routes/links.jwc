@@ -1,0 +1,38 @@
+namespace routes.links;
+
+import dto.links;
+import middleware.metrics;
+import middleware.ratelimit;
+import services.links;
+import services.qr;
+
+routes "/api/links" use MetricsTracker {
+    route POST "" use RateLimit {
+        let req = request.body() as LinkCreate;
+        let code = LinkService.create($req);
+
+        let base = env("PUBLIC_BASE_URL") ?? "https://1kb.uz";
+        let full = $base + "/" + $code;
+        let short = string.strip_prefix(string.strip_prefix($full, "https://"), "http://");
+
+        return created(json({
+            code:   $code,
+            short:  $short,
+            qr_svg: Qr.img_tag($full)
+        }));
+    }
+
+    route GET "{code}" {
+        return json(LinkService.detail(@code));
+    }
+}
+
+--- The catch-all redirect. It is declared last and matches a single path
+--- segment, so every route above wins on specificity — the 0.9.x version
+--- carried a hand-written list of names to exclude here, and that list was
+--- one deploy away from going stale.
+routes "/{code}" use MetricsTracker, RateLimit {
+    route GET "" {
+        return redirect(302, LinkService.resolve(@code));
+    }
+}

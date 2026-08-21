@@ -1,0 +1,53 @@
+namespace services.links;
+
+import app;
+import db.links;
+import dto.links;
+
+--- 7 hex characters — a 268M slug space, so a birthday collision is about
+--- even odds at ~16k links. Cheaper than an eighth character is retrying
+--- on the primary-key conflict, which `LinkService.create` does.
+function fresh_code() -> text {
+    return string.slice(hash.sha256(crypto.token(16)), 0, 7);
+}
+
+service LinkService {
+    --- Insert under a fresh code, retrying a conflict. Five back-to-back
+    --- collisions is not bad luck, it is a broken CSPRNG or an exhausted
+    --- space, and it should be loud rather than silent.
+    function create(req: LinkCreate) -> text {
+        for (attempt in [1, 2, 3, 4, 5]) {
+            let code = fresh_code();
+            insert into App.public.Links {
+                code = $code,
+                url  = $req.url
+            } catch Conflict (err) {
+                continue;
+            };
+            return $code;
+        }
+        throw CodeExhausted("qisqa kod ajratib bo'lmadi");
+    }
+
+    --- Resolve and count the click in one statement.
+    ---
+    --- `UPDATE … RETURNING` is one round-trip and is atomic, which two
+    --- earlier 0.9.x attempts were not: a bare `raw_sql(UPDATE … RETURNING)`
+    --- routed to exec and answered with the affected-row count, so the
+    --- redirect's `Location` became `1`.
+    function resolve(code: text) -> text {
+        let hit = update App.public.Links
+            set hits = hits + 1
+            where code == $code
+            as { url }
+            first or throw NotFound("bunday havola yo'q");
+        return $hit.url;
+    }
+
+    function detail(code: text) {
+        return select L from App.public.Links
+            where code == $code
+            as { code, url, hits, created_at }
+            first or throw NotFound("bunday havola yo'q");
+    }
+}

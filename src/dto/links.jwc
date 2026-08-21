@@ -1,0 +1,10 @@
+namespace dto.links;
+
+--- The body of `POST /api/links`.
+---
+--- `pattern` restricts to real web URLs. Without it `data:`, `file:`,
+--- `javascript:` and arbitrary schemes get shortened too, and the service
+--- becomes an open phishing relay.
+class LinkCreate {
+    url varchar(2048) required, minLength(8), pattern(r"^https?://");
+}

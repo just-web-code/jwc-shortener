@@ -1,8 +1,2 @@
-# qr-lite is consumed from the registry (see jwcproj.lock). The in-tree
-# prototype copy must stay out of the build context — otherwise jwc's
-# source walk loads it into <root> and it collides with the registry
-# package (error[E021]).
-qr-lite/
-
 .git/
-bin/
+migrations/*.snapshot.json

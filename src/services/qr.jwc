@@ -1,0 +1,29 @@
+namespace services.qr;
+
+--- QR image markup for a short URL, via barcodeapi.org.
+---
+--- This was the `qr-lite` package in 0.9.x. It is app code in 1.0: a
+--- package name must be an identifier (packages.md §4a.4) and `qr-lite`
+--- is not, and a three-function helper with one caller was never worth
+--- a dependency edge.
+service Qr {
+    --- Percent-encode the characters a query string cannot carry
+    --- literally. Not a general encoder — the input is a URL this service
+    --- just built, so the alphabet is known.
+    function encode(text_in: text) -> text {
+        let out = string.replace($text_in, "%", "%25");
+        $out = string.replace($out, " ", "%20");
+        $out = string.replace($out, "#", "%23");
+        $out = string.replace($out, "?", "%3F");
+        $out = string.replace($out, "&", "%26");
+        $out = string.replace($out, "/", "%2F");
+        $out = string.replace($out, ":", "%3A");
+        return $out;
+    }
+
+    function img_tag(url: text) -> text {
+        let encoded = Qr.encode($url);
+        return "<img src='https://barcodeapi.org/api/qr/" + $encoded
+            + "?format=svg' alt='QR Code'/>";
+    }
+}
