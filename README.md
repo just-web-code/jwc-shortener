@@ -138,8 +138,35 @@ The tables keep the physical names the 0.9.x deployment created — `link` and
 `api_call`, via `as "…"` on the declarations — so an existing database needs
 no data migration. `migrations/` was restarted for 1.0: the v1 applier is
 snapshot-based and the three 0.9.x files carried no snapshot, so they could
-not be diffed against. A live database that already has these tables should
-be reconciled with `jwc migrate status` rather than applied from empty.
+not be diffed against.
+
+A live database that already has these tables is adopted with **`jwc migrate
+baseline`**, which marks the migrations applied without running them:
+
+```bash
+jwc migrate baseline     # the database is not touched
+jwc migrate verify       # what still differs
+```
+
+`migrate status` was named here before and does not do this — it reports,
+it does not reconcile, and `migrate up` against a 0.9.x database fails with
+`relation "api_call" already exists`.
+
+Baseline leaves the constraint and index names to you, because that is what
+0.9.x got different: it wrote a bare `PRIMARY KEY (…)` and let Postgres name
+it `link_pkey`, while 1.0 names it `pk_link` so a violated constraint can be
+mapped back to its message. `verify` lists them, and the reconciling SQL is
+run once, by hand, against that database only:
+
+```sql
+ALTER TABLE public.link     RENAME CONSTRAINT link_pkey     TO pk_link;
+ALTER TABLE public.api_call RENAME CONSTRAINT api_call_pkey TO pk_api_call;
+CREATE INDEX ix_link__hits   ON public.link (hits);
+CREATE INDEX ix_api_call__ts ON public.api_call (ts);
+```
+
+It is not a file in `migrations/` on purpose: a database built by `jwc
+migrate up` already has those names, and the rename would fail there.
 
 ## Stack
 
