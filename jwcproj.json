@@ -1,6 +1,7 @@
 {
   "name": "jwc-shortener",
   "type": "app",
+  "jwc": "1.0.0-rc.6",
   "version": "0.2.0",
   "entry": "src/app.jwc",
   "dependencies": {

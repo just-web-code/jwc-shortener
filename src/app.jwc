@@ -1,34 +1,43 @@
 namespace app;
 
---- jwc-shortener — the URL shortener behind https://1kb.uz.
----
---- One JWC program serves three things:
---- 1. the landing page at `/`        — `views.pages`
---- 2. the shortener API + redirects  — `routes.links`
---- 3. traffic stats + Swagger UI     — `routes.ops`, `routes.pages`
+/// jwc-shortener — the URL shortener behind https://1kb.uz.
+///
+/// One JWC program serves three things:
+/// 1. the landing page at `/`        — `views.pages`
+/// 2. the shortener API + redirects  — `routes.links`
+/// 3. traffic stats + Swagger UI     — `routes.ops`, `routes.pages`
 database App : Postgres {
     init() {
-        pool_size         = int(env("DB_POOL") ?? "20");
+        pool_size         = 20;
         statement_timeout = "10s";
         connect_timeout   = "5s";
     }
 }
 
---- `public`, so the tables keep the physical names the 0.9.x deployment
---- created (`link`, `api_call`). A schema rename would orphan every row
---- behind a service that has been answering since long before this port.
+/// `public`, so the tables keep the physical names the 0.9.x deployment
+/// created (`link`, `api_call`). A schema rename would orphan every row
+/// behind a service that has been answering since long before this port.
 schema public of App;
 
+/// `serve()` takes no port in 1.0: the listener's address is `bind` and
+/// `port` here, resolved `--port` → `JWC_PORT` → `PORT` → this → 8080
+/// (config.md §3.2.2). A platform that injects `PORT` still wins, so this
+/// is only the default the source ships with.
+///
+/// The comment sits above the block rather than beside the key it explains
+/// because `jwc fmt` refuses a file whose comment is inside a `server { }`
+/// body — the AST does not carry it there.
 server {
+    port            = 8080;
     max_body_bytes  = 16384;
     request_timeout = "15s";
     trusted_proxies = ["10.0.0.0/8", "172.16.0.0/12"];
 }
 
---- Five fresh 7-hex codes colliding back to back is not bad luck: it is a
---- broken CSPRNG or an exhausted slug space, and it should be loud.
+/// Five fresh 7-hex codes colliding back to back is not bad luck: it is a
+/// broken CSPRNG or an exhausted slug space, and it should be loud.
 error CodeExhausted(message: text) = 500 : "qisqa kod ajratib bo'lmadi";
 
 function main() {
-    serve(int(env("PORT") ?? "8080"));
+    serve();
 }

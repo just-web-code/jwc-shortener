@@ -2,41 +2,41 @@ namespace routes.site;
 
 import middleware.metrics;
 
---- Everything this service serves that is not a link.
----
---- The landing page, the crawler files, the OG image, the OpenAPI
---- document and the Swagger page are all **files**. `static "/" from
---- "public"` serves them, and under `jwc build` the tree is walked at
---- compile time and `include_bytes!`d into the binary (routing.md §10.6),
---- so the container needs no directory beside it.
----
---- Until this port the landing page was 360 lines of `+ "\n"` string
---- concatenation inside a `views.pages` function, because 0.9's HTML lived
---- in a `r"..."` literal and 1.0 has no multi-line string. Neither form
---- was the right one: it is a file, it never changes per request, and as a
---- file it gets an ETag, a 304 and a `Cache-Control` for free.
----
---- `robots.txt`, `sitemap.xml` and `docs/index.html` were routes here
---- until jwc 0.9.942, for one reason: routing.md §10.2 put *every* route
---- ahead of a `static` mount, and `/{code: text}` is a route — so
---- `/robots.txt` reached the redirect handler, found no such link and
---- answered 404. §10.2 now ranks a mount ahead of a route that bound a
---- path parameter, which is what §4.3 said all along (a file under a
---- mount is all-literal; a `{slot}` has none), so they are files again.
----
---- What that costs: a mount takes no middleware (§10.1), so these four
---- paths are no longer counted by `MetricsTracker`. That is the trade —
---- crawler traffic drops out of `/ops/stats`, and in exchange the pages
---- are cached, revalidated and served without touching the database.
+/// Everything this service serves that is not a link.
+///
+/// The landing page, the crawler files, the OG image, the OpenAPI
+/// document and the Swagger page are all **files**. `static "/" from
+/// "public"` serves them, and under `jwc build` the tree is walked at
+/// compile time and `include_bytes!`d into the binary (routing.md §10.6),
+/// so the container needs no directory beside it.
+///
+/// Until this port the landing page was 360 lines of `+ "\n"` string
+/// concatenation inside a `views.pages` function, because 0.9's HTML lived
+/// in a `r"..."` literal and 1.0 has no multi-line string. Neither form
+/// was the right one: it is a file, it never changes per request, and as a
+/// file it gets an ETag, a 304 and a `Cache-Control` for free.
+///
+/// `robots.txt`, `sitemap.xml` and `docs/index.html` were routes here
+/// until jwc 0.9.942, for one reason: routing.md §10.2 put *every* route
+/// ahead of a `static` mount, and `/{code: text}` is a route — so
+/// `/robots.txt` reached the redirect handler, found no such link and
+/// answered 404. §10.2 now ranks a mount ahead of a route that bound a
+/// path parameter, which is what §4.3 said all along (a file under a
+/// mount is all-literal; a `{slot}` has none), so they are files again.
+///
+/// What that costs: a mount takes no middleware (§10.1), so these four
+/// paths are no longer counted by `MetricsTracker`. That is the trade —
+/// crawler traffic drops out of `/ops/stats`, and in exchange the pages
+/// are cached, revalidated and served without touching the database.
 static "/" from "public" cache 3600;
 
---- The two URLs the 0.9 service published, kept working.
----
---- The documents live under `/assets/` — one place for everything
---- `jwc openapi` and the design step write — and a 301 is what tells a
---- social scraper with a cached card, or a client with a saved OpenAPI
---- URL, where they went. These stay routes because they are redirects,
---- not files.
+/// The two URLs the 0.9 service published, kept working.
+///
+/// The documents live under `/assets/` — one place for everything
+/// `jwc openapi` and the design step write — and a 301 is what tells a
+/// social scraper with a cached card, or a client with a saved OpenAPI
+/// URL, where they went. These stay routes because they are redirects,
+/// not files.
 routes "/" use MetricsTracker {
     route GET "og.svg" {
         return redirect(301, "/assets/og.svg");

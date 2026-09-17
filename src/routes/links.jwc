@@ -9,13 +9,13 @@ import services.qr;
 routes "/api/links" use MetricsTracker {
     route POST "" use RateLimit {
         let req = request.body() as LinkCreate;
-        let code = LinkService.create($req);
+        let code = LinkService.create(@req);
 
         let base = env("PUBLIC_BASE_URL") ?? "https://1kb.uz";
-        let full = $base + "/" + $code;
-        let short = string.strip_prefix(string.strip_prefix($full, "https://"), "http://");
+        let full = @base + "/" + @code;
+        let short = string.strip_prefix(string.strip_prefix(@full, "https://"), "http://");
 
-        return created(json({ code: $code, short: $short, qr_svg: Qr.img_tag($full) }));
+        return created(json({ code: @code, short: @short, qr_svg: Qr.img_tag(@full) }));
     }
 
     route GET "{code}" {
@@ -23,17 +23,17 @@ routes "/api/links" use MetricsTracker {
     }
 }
 
---- The catch-all redirect. It is declared last and matches a single path
---- segment, so every route above wins on specificity — the 0.9.x version
---- carried a hand-written list of names to exclude here, and that list was
---- one deploy away from going stale.
+/// The catch-all redirect. It is declared last and matches a single path
+/// segment, so every route above wins on specificity — the 0.9.x version
+/// carried a hand-written list of names to exclude here, and that list was
+/// one deploy away from going stale.
 routes "/{code}" use MetricsTracker, RateLimit {
     route GET "" {
-        -- `redirectExternal`, not `redirect`: this service exists to send a
-        -- caller to an address someone else supplied, which is an open
-        -- redirect and is the product. `redirect` refuses an off-site
-        -- target (routing.md §6.4) precisely so that a service which does
-        -- this has to say so, in one greppable word.
+        // `redirectExternal`, not `redirect`: this service exists to send a
+        // caller to an address someone else supplied, which is an open
+        // redirect and is the product. `redirect` refuses an off-site
+        // target (routing.md §6.4) precisely so that a service which does
+        // this has to say so, in one greppable word.
         return redirectExternal(302, LinkService.resolve(@code));
     }
 }

@@ -2,39 +2,39 @@ namespace middleware.ratelimit;
 
 import redis;
 
---- 60 requests per rolling 60s window, keyed on the client address.
----
---- `redis.rate_limit` is INCR + EXPIRE in one Lua script. The hand-rolled
---- read-modify-write this replaced got two things wrong: concurrent
---- requests could both read the same count and both write count+1, and the
---- window was per-process, so N replicas meant an effective limit of 60xN.
----
---- `request.client_ip()` reads `X-Forwarded-For` only through the
---- `trusted_proxies` list in `app.jwc`; with none configured it is the
---- socket peer. That is the whole rule (config.md §3.3) and it is why this
---- no longer hand-reads `cf-connecting-ip`.
---- **1.0 has no in-process fallback**, unlike the 0.9 package: without a
---- server every `redis.*` name but `enabled()` raises. Unguarded, this
---- middleware answers 500 to every request of a deployment that has no
---- Redis — including the local `docker compose` loop with the container
---- stopped. A shortener over its rate limit is a nuisance, not a
---- correctness problem, so the call is guarded and a Redis-less
---- deployment serves.
----
---- It does not pretend to be rate limited either. `jwc_redis_pool_*` in
---- `/metrics` appears only when Redis is configured, which is how an
---- operator tells the two apart.
----
---- Written as an `if` around the work rather than an early exit: falling
---- off the end is how a middleware lets the chain continue
---- (middleware.md §4), and a bare `return;` in the request phase is
---- **not** that — it answers 204 and stops.
+/// 60 requests per rolling 60s window, keyed on the client address.
+///
+/// `redis.rate_limit` is INCR + EXPIRE in one Lua script. The hand-rolled
+/// read-modify-write this replaced got two things wrong: concurrent
+/// requests could both read the same count and both write count+1, and the
+/// window was per-process, so N replicas meant an effective limit of 60xN.
+///
+/// `request.client_ip()` reads `X-Forwarded-For` only through the
+/// `trusted_proxies` list in `app.jwc`; with none configured it is the
+/// socket peer. That is the whole rule (config.md §3.3) and it is why this
+/// no longer hand-reads `cf-connecting-ip`.
+/// **1.0 has no in-process fallback**, unlike the 0.9 package: without a
+/// server every `redis.*` name but `enabled()` raises. Unguarded, this
+/// middleware answers 500 to every request of a deployment that has no
+/// Redis — including the local `docker compose` loop with the container
+/// stopped. A shortener over its rate limit is a nuisance, not a
+/// correctness problem, so the call is guarded and a Redis-less
+/// deployment serves.
+///
+/// It does not pretend to be rate limited either. `jwc_redis_pool_*` in
+/// `/metrics` appears only when Redis is configured, which is how an
+/// operator tells the two apart.
+///
+/// Written as an `if` around the work rather than an early exit: falling
+/// off the end is how a middleware lets the chain continue
+/// (middleware.md §4), and a bare `return;` in the request phase is
+/// **not** that — it answers 204 and stops.
 middleware RateLimit {
     if (redis.enabled()) {
         let ip = request.client_ip();
-        let allowed = redis.rate_limit("rl:" + string.of($ip), 60, 60);
+        let allowed = redis.rate_limit("rl:" + string.of(@ip), 60, 60);
 
-        if (!$allowed) {
+        if (!@allowed) {
             throw TooManyRequests("juda ko'p so'rov");
         }
     }

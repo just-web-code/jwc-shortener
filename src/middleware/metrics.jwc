@@ -3,27 +3,27 @@ namespace middleware.metrics;
 import app;
 import db.links;
 
---- Traffic telemetry, written from `after` so the row carries what the
---- client actually saw.
----
---- A request-phase middleware cannot see the response, which is why the
---- 0.9.x version hardcoded `status` to 200 — even for 404s and 500s — and
---- `latency_ms` to 0, making every percentile in `/api/v1/stats` a zero.
---- `response.status()` is only meaningful here (middleware.md §5).
+/// Traffic telemetry, written from `after` so the row carries what the
+/// client actually saw.
+///
+/// A request-phase middleware cannot see the response, which is why the
+/// 0.9.x version hardcoded `status` to 200 — even for 404s and 500s — and
+/// `latency_ms` to 0, making every percentile in `/api/v1/stats` a zero.
+/// `response.status()` is only meaningful here (middleware.md §5).
 middleware MetricsTracker {
     after {
-        -- `after` may not raise (E0811): the response has already been
-        -- decided and there is no handler left to catch anything. A
-        -- telemetry row is not worth a 500 the client would never see.
-        --
-        -- `buffered` hands the row to the batch writer and returns, so no
-        -- request waits on the insert. This is the whole subject of
-        -- BENCHMARK.md — taking the write off the critical path measured
-        -- 7 951 -> 102 551 req/s on the native backend — and the port
-        -- dropped the word. Rows are dropped rather than queued without
-        -- bound if the writer falls behind; `jwc_log_dropped_total` counts
-        -- them, which for traffic telemetry is the right trade.
-        insert into App.public.ApiCalls {
+        // `after` may not raise (E0811): the response has already been
+        // decided and there is no handler left to catch anything. A
+        // telemetry row is not worth a 500 the client would never see.
+        //
+        // `buffered` hands the row to the batch writer and returns, so no
+        // request waits on the insert. This is the whole subject of
+        // BENCHMARK.md — taking the write off the critical path measured
+        // 7 951 -> 102 551 req/s on the native backend — and the port
+        // dropped the word. Rows are dropped rather than queued without
+        // bound if the writer falls behind; `jwc_log_dropped_total` counts
+        // them, which for traffic telemetry is the right trade.
+        insert ApiCalls into App.public.ApiCalls {
             path       = request.route(),
             method     = request.method(),
             status     = response.status(),
