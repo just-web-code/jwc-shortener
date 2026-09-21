@@ -7,11 +7,11 @@
 # shared state never shows up on a laptop.
 #
 #   docker compose up -d
-#   export JWC_DATABASE_URL=postgres://jwc:jwc@localhost:5432/shortener
+#   export DATABASE_URL=postgres://jwc:jwc@localhost:5432/shortener
 #   export JWC_REDIS_URL=redis://localhost:6379
-#   jwc migrate up && jwc run
+#   jwc migrate up . && jwc serve .
 #
-# The app itself is not a service here: `jwc run` / `jwc build --native`
+# The app itself is not a service here: `jwc serve`
 # against these two is the fast loop. Add it only if you want to exercise
 # the shipped image.
 

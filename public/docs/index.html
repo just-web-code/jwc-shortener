@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1kb.uz API Reference — Interactive Docs (Swagger UI)</title>
+<meta name="description" content="Interactive OpenAPI reference for the 1kb.uz URL shortener API: create short links, resolve codes, and read live traffic stats.">
+<link rel="canonical" href="https://1kb.uz/docs">
+<meta name="theme-color" content="#0b0d10">
+<link rel="icon" type="image/svg+xml" href="/assets/og.svg">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="1kb.uz">
+<meta property="og:title" content="1kb.uz API Reference">
+<meta property="og:description" content="Interactive OpenAPI reference for the 1kb.uz URL shortener API.">
+<meta property="og:url" content="https://1kb.uz/docs">
+<meta property="og:image" content="https://1kb.uz/assets/og.svg">
+<link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+<style>body { margin: 0; }</style>
+</head>
+<body>
+<div id="swagger-ui"></div>
+<script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+<script>
+window.onload = function () {
+  window.ui = SwaggerUIBundle({
+    url: '/assets/openapi.json',
+    dom_id: '#swagger-ui',
+    deepLinking: true,
+    presets: [SwaggerUIBundle.presets.apis],
+    layout: 'BaseLayout'
+  });
+};
+</script>
+</body>
+</html>

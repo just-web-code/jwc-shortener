@@ -1,0 +1,121 @@
+{
+  "format": 1,
+  "scheme": "v1",
+  "schemas": [
+    {
+      "name": "public",
+      "declared": "public"
+    }
+  ],
+  "tables": [
+    {
+      "schema": "public",
+      "name": "api_call",
+      "declared": "ApiCalls",
+      "columns": [
+        {
+          "name": "id",
+          "declared": "id",
+          "ty": "bigint",
+          "nullable": false,
+          "identity": true
+        },
+        {
+          "name": "path",
+          "declared": "path",
+          "ty": "varchar(200)",
+          "nullable": false
+        },
+        {
+          "name": "method",
+          "declared": "method",
+          "ty": "varchar(8)",
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "declared": "status",
+          "ty": "integer",
+          "nullable": false
+        },
+        {
+          "name": "latency_ms",
+          "declared": "latency_ms",
+          "ty": "integer",
+          "nullable": false,
+          "comment": "Whole milliseconds, kept because a deploy can land either side of\nthe migration that added the microsecond column. `GET /` answers in\nwell under a millisecond, so across 1.48M logged requests this\nrecorded min 0, max 1, mean 0.00 — measured, and useless for a\npercentile."
+        },
+        {
+          "name": "latency_us",
+          "declared": "latency_us",
+          "ty": "integer",
+          "nullable": false
+        },
+        {
+          "name": "ts",
+          "declared": "ts",
+          "ty": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "primary_key": {
+        "name": "pk_api_call",
+        "columns": [
+          "id"
+        ]
+      },
+      "indexes": [
+        {
+          "name": "ix_api_call__ts",
+          "columns": [
+            {
+              "name": "ts"
+            }
+          ]
+        }
+      ],
+      "comment": "One logged request. Written from `MetricsTracker`'s `after` block, so\nthe row carries the status and the duration the client actually saw."
+    },
+    {
+      "schema": "public",
+      "name": "link",
+      "declared": "Links",
+      "columns": [
+        {
+          "name": "code",
+          "declared": "code",
+          "ty": "varchar(8)",
+          "nullable": false
+        },
+        {
+          "name": "url",
+          "declared": "url",
+          "ty": "varchar(2048)",
+          "nullable": false
+        },
+        {
+          "name": "hits",
+          "declared": "hits",
+          "ty": "integer",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "declared": "created_at",
+          "ty": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "primary_key": {
+        "name": "pk_link",
+        "columns": [
+          "code"
+        ]
+      },
+      "comment": "One short link. `code` is the slug in the short URL and the primary\nkey: the redirect is a single lookup on it, which is the hot path."
+    }
+  ]
+}
