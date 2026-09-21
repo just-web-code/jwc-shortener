@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # the manifest refuses the project before it reads a line of it. Moving
 # this pin means moving the source — `jwc fix` does the mechanical part —
 # and the `jwc` field, in the same change.
-ARG JWC_VERSION=1.0.0-rc.7
+ARG JWC_VERSION=1.0.0-rc.8
 RUN curl -fsSL https://github.com/just-web-code/jwc-lang/releases/download/v${JWC_VERSION}/jwc-v${JWC_VERSION}-x86_64-linux.tar.gz \
         | tar -xz -C /usr/local/bin \
     && chmod +x /usr/local/bin/jwc \
