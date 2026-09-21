@@ -10,7 +10,7 @@ service Qr {
     /// Percent-encode the characters a query string cannot carry
     /// literally. Not a general encoder — the input is a URL this service
     /// just built, so the alphabet is known.
-    function encode(text_in: text) -> text {
+    function encode(text_in: text): text {
         let out = string.replace(@text_in, "%", "%25");
         @out = string.replace(@out, " ", "%20");
         @out = string.replace(@out, "#", "%23");
@@ -21,7 +21,7 @@ service Qr {
         return @out;
     }
 
-    function img_tag(url: text) -> text {
+    function img_tag(url: text): text {
         let encoded = Qr.encode(@url);
         return "<img src='https://barcodeapi.org/api/qr/"
             + @encoded

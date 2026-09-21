@@ -7,7 +7,7 @@ import dto.links;
 /// 7 hex characters — a 268M slug space, so a birthday collision is about
 /// even odds at ~16k links. Cheaper than an eighth character is retrying
 /// on the primary-key conflict, which `LinkService.create` does.
-function fresh_code() -> text {
+function fresh_code(): text {
     return string.slice(hash.sha256(crypto.token(16)), 0, 7);
 }
 
@@ -15,7 +15,7 @@ service LinkService {
     /// Insert under a fresh code, retrying a conflict. Five back-to-back
     /// collisions is not bad luck, it is a broken CSPRNG or an exhausted
     /// space, and it should be loud rather than silent.
-    function create(req: LinkCreate) -> text {
+    function create(req: LinkCreate): text {
         for (let attempt in [1, 2, 3, 4, 5]) {
             let code = fresh_code();
             insert Links into App.public.Links {
@@ -35,7 +35,7 @@ service LinkService {
     /// earlier 0.9.x attempts were not: a bare `raw_sql(UPDATE … RETURNING)`
     /// routed to exec and answered with the affected-row count, so the
     /// redirect's `Location` became `1`.
-    function resolve(code: text) -> text {
+    function resolve(code: text): text {
         let hit = update Links of App.public.Links
             set hits = Links.hits + 1
             where Links.code == @code

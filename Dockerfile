@@ -13,25 +13,12 @@ FROM debian:trixie-slim AS fetch
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl ca-certificates && rm -rf /var/lib/apt/lists/*
 
-# This service needs every one of these, and no earlier release has them:
-#   content(mime, body)            the landing page, robots.txt, sitemap.xml
-#                                  and og.svg are not JSON
-#   break / continue               the retry-on-conflict loop in LinkService
-#   whole-table aggregates         /api/v1/stats
-#   timestamptz - interval         the 24-hour window in /api/v1/stats
-#   static "/" from "public"       the landing page and the assets
-# Do not pin below 0.9.918: from that release `redis.*` requires
-# `import redis;` (names.md §6.2.3), which `src/middleware/ratelimit.jwc`
-# writes. An older compiler does not know the rule; a newer one enforces it.
-#
-# 0.9.942 for a `static` mount outranking `/{code}` (routing.md §10.2) —
-# below it `/robots.txt` reaches the redirect handler and 404s.
-# 0.9.941 for `redirectExternal`, which is what `GET /{code}` calls.
-# 0.9.936 for `timestamptz - interval`, which every release before it got
-# right in `jwc serve` and wrong in `jwc build` — so a native image built
-# on an older compiler would answer `/api/v1/stats` with a 500 that the
-# interpreter never showed.
-ARG JWC_VERSION=0.9.942
+# Pinned to the release `jwcproj.json` names: `rc.N` and `rc.N+1` promise
+# nothing to each other (SEMVER.md), and a compiler that does not satisfy
+# the manifest refuses the project before it reads a line of it. Moving
+# this pin means moving the source — `jwc fix` does the mechanical part —
+# and the `jwc` field, in the same change.
+ARG JWC_VERSION=1.0.0-rc.7
 RUN curl -fsSL https://github.com/just-web-code/jwc-lang/releases/download/v${JWC_VERSION}/jwc-v${JWC_VERSION}-x86_64-linux.tar.gz \
         | tar -xz -C /usr/local/bin \
     && chmod +x /usr/local/bin/jwc \
@@ -60,6 +47,6 @@ ENV RUST_LOG=info
 HEALTHCHECK --interval=30s --timeout=3s \
     CMD wget -q -O- http://127.0.0.1:8080/healthz || exit 1
 
-# The port comes from `serve(int(env("PORT") ?? "8080"))` in `src/app.jwc`,
-# which the runtime evaluates at boot (config.md §3.2.2).
+# The port is `server { port }` in `src/app.jwc`; `--port`, `JWC_PORT` and
+# `PORT` override it in that order (config.md §3.2.2).
 CMD ["jwc", "serve", "/app"]

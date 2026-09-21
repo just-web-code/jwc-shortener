@@ -93,11 +93,13 @@ jwc serve .
 # → 9 routes, listening on http://0.0.0.0:8080
 ```
 
-The port is `serve(int(env("PORT") ?? "8080"))` in `src/app.jwc`, evaluated
-at boot. `jwc serve --port N` overrides it.
+The port is `server { port = 8080; }` in `src/app.jwc`; `jwc serve --port N`,
+`JWC_PORT` and `PORT` override it in that order (config.md §3.2.2).
 
-Requires **jwc 0.9.942+**. Every one of these is used here and none is in
-an earlier release:
+Requires **jwc 1.0.0-rc.7**, exactly — `jwcproj.json` names it, and a
+compiler that does not satisfy it refuses the project. Moving the pin is
+`jwc fix` plus the field. Every one of these is used here, and each
+arrived in the 0.9.x release named:
 
 | Needed for | Feature |
 |---|---|
