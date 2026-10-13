@@ -13,12 +13,12 @@ FROM debian:trixie-slim AS fetch
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl ca-certificates && rm -rf /var/lib/apt/lists/*
 
-# Pinned to the release `jwcproj.json` names: `rc.N` and `rc.N+1` promise
-# nothing to each other (SEMVER.md), and a compiler that does not satisfy
+# Pinned to the release `jwcproj.json` names: a bare version there means
+# exactly that version (SEMVER.md), and a compiler that does not satisfy
 # the manifest refuses the project before it reads a line of it. Moving
 # this pin means moving the source — `jwc fix` does the mechanical part —
 # and the `jwc` field, in the same change.
-ARG JWC_VERSION=1.0.0-rc.8
+ARG JWC_VERSION=1.1.0
 RUN curl -fsSL https://github.com/just-web-code/jwc-lang/releases/download/v${JWC_VERSION}/jwc-v${JWC_VERSION}-x86_64-linux.tar.gz \
         | tar -xz -C /usr/local/bin \
     && chmod +x /usr/local/bin/jwc \
